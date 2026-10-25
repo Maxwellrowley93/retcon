@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en" data-version="1.3.2">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retcon</title>
+<link rel="stylesheet" href="static/style.css?v=1.3.2">
+</head>
+<body>
+<header>
+  <div class="brand">Retcon <span class="ver">v1.3.2</span></div>
+  <div id="legend" class="legend">Faded cards are <b>shared history</b>, the same card shown on every timeline that shares it. Hover a card to see it everywhere.</div>
+  <div id="status" class="status">Loading…</div>
+  <div class="head-buttons">
+    <button id="rulesBtn" class="ghost">Cards</button>
+    <button id="newBtn">New game</button>
+  </div>
+</header>
+
+<main>
+  <section class="table">
+    <div class="round-bar">
+      <div id="roundInfo" class="round-info"></div>
+      <div id="gauge" class="gauge"></div>
+      <div class="view-opts">
+        <label><input type="checkbox" id="watchRounds"> Watch each round play out</label>
+        <label><input type="checkbox" id="treeView"> Draw each card once</label>
+      </div>
+    </div>
+    <div id="caption" class="caption hidden">
+      <span id="captionText"></span>
+      <span id="captionStep" class="step"></span>
+      <button id="replayPause" class="ghost">Pause</button>
+      <button id="replayStep" class="ghost">Step</button>
+      <button id="replaySkip">Skip</button>
+    </div>
+    <div class="board-wrap"><div id="board" class="board"></div></div>
+
+    <div id="decision" class="decision hidden"></div>
+
+    <div class="hand-area">
+      <div class="hand-head">
+        <h2>Your hand</h2>
+        <div class="hand-actions">
+          <button id="drawBtn">Draw</button>
+          <button id="passBtn" class="ghost hidden">Pass</button>
+        </div>
+      </div>
+      <div id="hand" class="hand"></div>
+      <div id="recall" class="recall hidden"></div>
+      <p id="hint" class="hint"></p>
+    </div>
+  </section>
+
+  <aside>
+    <div class="panel"><h2>Travellers</h2><div id="players"></div></div>
+    <div class="panel"><h2>Timelines</h2><div id="tally"></div></div>
+    <div class="panel log-panel"><h2>What happened</h2><div id="log" class="log"></div></div>
+  </aside>
+</main>
+
+<dialog id="newDialog">
+  <form id="newForm" method="dialog">
+    <h2>New game</h2>
+    <label>Players
+      <select name="players"><option>2</option><option selected>3</option><option>4</option></select>
+    </label>
+    <label>Opponents
+      <select name="bot">
+        <option value="planner" selected>Planner (guesses hidden cards, plays the round out)</option>
+        <option value="greedy">Greedy (looks ahead one round, blind to hidden cards)</option>
+        <option value="rule">Rule-based (simple intent)</option>
+        <option value="aggressor">Aggressor (Assassins and thieves)</option>
+        <option value="builder">Builder (Ancestors and Sentinels)</option>
+        <option value="random">Random</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" name="auto_ancestor" checked> Activate my Ancestors automatically</label>
+    <label>Seed (optional) <input name="seed" inputmode="numeric" placeholder="random"></label>
+    <div class="dialog-buttons">
+      <button value="cancel" class="ghost" formnovalidate>Cancel</button>
+      <button value="ok" id="startBtn">Start</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rulesDialog">
+  <div class="rules">
+    <h2>Cards</h2>
+    <table>
+      <tr><th>Ancestor</th><td><b>Lasting.</b> When the sweep reaches it, whoever controls it may place one of their lineage tokens on it (one per player per Ancestor). Tokens stay with their player even if the Ancestor is stolen.</td></tr>
+      <tr><th>Assassin</th><td><b>One-shot.</b> Kills the very next card, whoever owns it (yours too), facedown or not. At a split it hits the first card in every branch.</td></tr>
+      <tr><th>Sentinel</th><td><b>Lasting, passive.</b> Immune to strikes, yours included. Beside an Assassin or Executioner, it stops a rival's strike on one of its owner's cards (never another player's card, and never its owner's own strike). The striker is discarded; the Sentinel stays.</td></tr>
+      <tr><th>Revisionist</th><td><b>One-shot.</b> Steals the card directly <i>before</i> it, if it's a rival's. If it's your own, nothing happens.</td></tr>
+      <tr><th>Prophet</th><td><b>One-shot.</b> Steals the very next card, whoever owns it. A facedown card it steals acts for you.</td></tr>
+      <tr><th>Wormhole</th><td><b>One-shot.</b> Moves the card just <i>before or after</i> it, even facedown: one slot earlier, one slot later, or across to another timeline, swapping with the card in the equivalent timeslot (as many cards since the two timelines split, the split point not counting; in a trick, the same place). No card there, no move. If an Assassin or Executioner strikes it, it isn't killed: it acts at once (it can move the striker), then the striker hits whatever is next to it. Thrown into a later trick not yet scored, the striker waits for that trick to be scored first.</td></tr>
+      <tr><th>Executioner</th><td><b>One-shot.</b> The Assassin's mirror: kills the card just <i>before</i> it, whoever owns it. A Sentinel it strikes is immune, and a rival's Sentinel just after it stops it if the card it would kill is that Sentinel's owner's. Leading a trick, it reaches back and kills the last card of history.</td></tr>
+      <tr><th>Usurper</th><td><b>One-shot.</b> Removes a rival's lineage token from the Ancestor directly behind it. The token goes home. Against the Ancestor's controller this lasts until the next sweep, which is enough to stop a lock.</td></tr>
+      <tr><th>Courier</th><td><b>One-shot.</b> When the sweep reaches it, you may play a card from your hand facedown in its place. That card acts straight away, in the same sweep. In a trick, it arrives after the trick is scored, so it doesn't score; the Courier itself does.</td></tr>
+    </table>
+    <h3>A round</h3>
+    <ol>
+      <li><b>Refill:</b> draw up to one card per open timeline, plus two.</li>
+      <li><b>The Present:</b> timeline by timeline, everyone plays one card facedown into that timeline's trick, beyond its Present. The lead rotates.</li>
+      <li><b>The Past:</b> across the timelines again. On each, whoever won fewest tricks last round goes first: send one card back into that timeline's history (1 charge per step back in time: 1 just behind the Present, plus 1 for each history card it goes behind), or draw one card, or <b>recall</b>: pay 3 charge to take any card from the face-up discard pile into your hand (not with 7 or more cards in hand), or pass.</li>
+      <li><b>Ruptures:</b> every charge spent on sends and recalls, by anyone, adds to the <b>instability</b>. When it reaches one round's income on one timeline plus 3 (7 with 2 players, 8 with 3, 9 with 4), the timeline whose Past it is ruptures at once. Whoever's send or recall got it there chooses where it splits (anywhere in its history, its shared part too, but not before T0's first card and never right behind locked history) and the new timeline's Present marker; the instability goes back to 0. The new timeline shares everything before that point, and the lineage on it; it starts empty, gets its first trick next round, and can't lock this round. At most 5 open timelines (one per Present marker; a locked timeline's marker comes back), and at most 2 per player plus 1 in all: 5, 7 or 9.</li>
+      <li><b>The sweep:</b> first every timeline's history, earliest first (T0 first on a tie), each stopping at its Present. Then the tricks, one timeline at a time, T0 first: each trick is scored, then its cards act in the order played. A trick's first card can reach back to the last history card (a leading Executioner kills it, a Revisionist steals it, a Usurper strips its lineage, a Wormhole moves it within history), but history never reaches forward into a trick.</li>
+      <li><b>Tricks:</b> each trick is scored when its turn comes, before its own cards act: the best card in it wins, even if it's then killed or stolen (values are on your cards; ties go to the card played first). A Wormhole in an earlier timeline's trick can swap a card into a later trick before it's scored, but nothing acts in a trick until it has been scored: the card that arrives waits its turn. Winner +3 charge, everyone else +1.</li>
+      <li><b>Suits:</b> every card has one of ♠ ♥ ♦ ♣. T0's Present marker has no suit, so it has no trump. A new timeline takes a free Present marker (one of the four suits, or the one with no suit once T0 has locked): no two open timelines share one. A card of its timeline's suit is a <b>trump</b>: it beats every card that isn't, whatever their values. Among trumps, the most valuable wins. Whoever's send ruptures a timeline chooses the new one's marker from those free (the last one is given). Suits do nothing outside tricks.</li>
+      <li><b>Lineage:</b> an Ancestor gives one lineage token to whoever controls it (one per player per Ancestor). A timeline counts the lineage along all its history, so a new timeline carries the lineage it shares.</li>
+      <li><b>Lock:</b> a timeline locks for a player with 3 lineage on it and strictly more than anyone else. Nothing locks before the first rupture, and a new timeline can't lock in the round it appears. Then the present becomes the past.</li>
+      <li><b>Sealed history:</b> once no open timeline runs through a card any more (its timeline locked), it goes back to the deck.</li>
+      <li><b>Game end:</b> the first player to lock 3 timelines wins at once (if two get there in the same lock step, the first lock made wins). If every timeline is locked and nobody has 3, a fresh timeline begins with no shared history. After round 30 (a safety cap), most locks wins, and a tie is a draw.</li>
+    </ol>
+    <div class="dialog-buttons"><button id="rulesClose">Close</button></div>
+  </div>
+</dialog>
+
+<script src="static/pyodide.js?v=1.3.2"></script>
+<script src="static/app.js?v=1.3.2"></script>
+</body>
+</html>
