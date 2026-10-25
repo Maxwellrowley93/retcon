@@ -4,7 +4,11 @@ A card game about time travel for 2–4 players. You are one of the rival invent
 
 You play against 1–3 computer opponents, in your web browser.
 
-## Download and play
+## Play online
+
+**[Play Retcon in your browser](https://maxwellrowley93.github.io/retcon/)**: nothing to install. The first load takes a few seconds. A game in progress is kept if you reload the page.
+
+## Or download and play
 
 1. Go to [**Releases**](../../releases/latest) and download the `Retcon-v….zip` file under **Assets**.
 2. Unzip it.
